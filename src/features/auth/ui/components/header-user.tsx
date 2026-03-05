@@ -1,8 +1,12 @@
-import { authClient } from '#/lib/auth-client'
+import { authClient } from '#/features/auth/lib/auth-client'
 import { Button } from '#/components/ui/button'
 import { Link } from '@tanstack/react-router'
 
-export default function BetterAuthHeader() {
+type Props = {
+  isMobile?: boolean
+}
+
+export default function BetterAuthHeader({ isMobile = false }: Props) {
   const { data: session, isPending } = authClient.useSession()
 
   if (isPending) {
@@ -27,6 +31,19 @@ export default function BetterAuthHeader() {
           onClick={() => void authClient.signOut()}
         >
           Sign out
+        </Button>
+      </div>
+    )
+  }
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-2">
+        <Button variant="default" size="sm" asChild className="w-full">
+          <Link to="/login">Login</Link>
+        </Button>
+        <Button variant="outline" size="sm" asChild className="w-full">
+          <Link to="/register">Register</Link>
         </Button>
       </div>
     )

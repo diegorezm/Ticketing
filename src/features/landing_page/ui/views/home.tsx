@@ -43,7 +43,7 @@ const MOCKET_TICKETS = [
 export function HomePage() {
   return (
     <>
-      <section className="max-w-6xl mx-auto px-10 py-24 grid grid-cols-2 gap-16 items-center">
+      <section className="py-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div>
           <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 font-mono text-xs uppercase tracking-widest px-3 py-1 rounded-sm mb-6">
             <Zap size={10} />
@@ -104,11 +104,11 @@ export function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="max-w-6xl mx-auto px-10 py-16 border-t border-border">
+      <section className="py-16 border-t border-border">
         <p className="font-mono text-xs uppercase tracking-widest text-primary mb-10">
           Why Ticketing
         </p>
-        <div className="grid grid-cols-3 gap-5">
+        <div className="grid  grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-5">
           {FEATURES.map((f) => (
             <div
               key={f.title}
@@ -129,7 +129,7 @@ export function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="max-w-6xl mx-auto px-10 mb-20">
+      <section className="mb-20">
         <div className="bg-primary rounded-lg px-14 py-12 flex items-center justify-between gap-8">
           <div>
             <h2 className="text-2xl font-semibold text-primary-foreground mb-1 tracking-tight">

@@ -4,10 +4,12 @@ import { Footer } from './footer'
 
 export function PublicLayout() {
   return (
-    <main className="min-h-screen bg-background text-foreground font-serif">
+    <main className="min-h-screen max-w-6xl mx-auto bg-background text-foreground font-serif">
       <Navbar />
-      <Outlet />
-      <Footer />
+      <div className="px-10">
+        <Outlet />
+        <Footer />
+      </div>
     </main>
   )
 }
