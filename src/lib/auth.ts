@@ -1,8 +1,8 @@
 import { betterAuth } from 'better-auth'
 import { tanstackStartCookies } from 'better-auth/tanstack-start'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { getDB } from '#/server/db'
 import { env } from 'cloudflare:workers'
+import { getDB } from '#/db'
 
 const db = getDB(env.DB)
 

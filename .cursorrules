@@ -5,3 +5,223 @@ Use the latest version of Shadcn to install new components, like this command to
 ```bash
 pnpm dlx shadcn@latest add button
 ```
+
+# Project Agent Guide
+
+> This document is the source of truth for any AI agent or developer working on this codebase. Read it fully before making changes.
+
+---
+
+## Stack
+
+- **Framework:** TanStack Start (file-based routing via `src/routes/`)
+- **Database ORM:** Drizzle ORM
+- **Language:** TypeScript (strict mode — no `any`, no implicit types)
+- **Architecture:** Feature-based (see below)
+
+---
+
+## Project Structure
+
+```
+src/
+├── db/
+│   ├── index.ts              # Drizzle client instance
+│   └── schemas/
+│       ├── index.ts          # Re-exports all schemas
+│       └── *.ts              # One file per domain entity
+│
+├── features/
+│   └── [feature-name]/
+│       ├── index.ts          # Public API — only export what consumers need
+│       ├── [feature].schema.ts   # Zod schemas & inferred types
+│       ├── [feature].queries.ts  # DB read functions (SELECT)
+│       ├── [feature].mutations.ts # DB write functions (INSERT/UPDATE/DELETE)
+│       ├── [feature].service.ts  # Business logic, orchestration
+│       ├── [feature].hooks.ts    # React hooks (client-side)
+│       ├── components/           # UI components scoped to this feature
+│       │   └── *.tsx
+│       └── __tests__/
+│           ├── [feature].queries.test.ts
+│           ├── [feature].mutations.test.ts
+│           └── [feature].service.test.ts
+│
+├── routes/
+│   └── **                    # TanStack Start file-based routes
+│
+├── components/               # Truly shared, cross-feature UI components only
+├── lib/                      # Shared utilities (formatters, helpers, constants)
+└── types/                    # Global TypeScript types and interfaces
+```
+
+---
+
+## Feature Module Rules
+
+### 1. Every feature is self-contained
+
+A feature owns its own data access, business logic, validation, and UI. It should not directly import internals from another feature. If two features need to share logic, extract it to `src/lib/`.
+
+### 2. Each file in a feature has one job
+
+| File | Responsibility |
+|---|---|
+| `[feature].schema.ts` | Zod validation schemas + inferred TypeScript types |
+| `[feature].queries.ts` | Read-only DB functions. Import Drizzle client from `src/db` |
+| `[feature].mutations.ts` | Write DB functions (create, update, delete) |
+| `[feature].service.ts` | Orchestrates queries/mutations + business rules. No raw DB calls here |
+| `[feature].hooks.ts` | React hooks wrapping service calls for client components |
+| `index.ts` | Public API. Only re-export what route files or other features should use |
+
+### 3. Public API via `index.ts`
+
+Never import from a feature's internal files directly. Always go through its `index.ts`.
+
+```ts
+// ✅ Correct
+import { getUserById } from "@/features/users";
+
+// ❌ Wrong
+import { getUserById } from "@/features/users/users.queries";
+```
+
+### 4. Drizzle usage
+
+- Import the db client from `@/db` (maps to `src/db/index.ts`)
+- Import schemas from `@/db/schemas` (maps to `src/db/schemas/index.ts`)
+- Keep raw Drizzle calls inside `*.queries.ts` and `*.mutations.ts` only
+- Never write raw DB calls in services, hooks, or route files
+
+```ts
+// src/features/users/users.queries.ts
+import { db } from "@/db";
+import { users } from "@/db/schemas";
+import { eq } from "drizzle-orm";
+
+export async function getUserById(id: string) {
+  return db.query.users.findFirst({
+    where: eq(users.id, id),
+  });
+}
+```
+
+### 5. Validation with Zod
+
+All input validation lives in `[feature].schema.ts`. Infer TypeScript types from schemas — don't write them manually.
+
+```ts
+// src/features/users/users.schema.ts
+import { z } from "zod";
+
+export const createUserSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+});
+
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+```
+
+### 6. Services orchestrate, they don't persist
+
+Services call queries and mutations. They apply business rules, compose multiple operations, throw typed errors. They never call `db` directly.
+
+```ts
+// src/features/users/users.service.ts
+import { createUserSchema, type CreateUserInput } from "./users.schema";
+import { getUserByEmail } from "./users.queries";
+import { insertUser } from "./users.mutations";
+
+export async function createUser(input: CreateUserInput) {
+  const parsed = createUserSchema.parse(input); // always validate at boundary
+
+  const existing = await getUserByEmail(parsed.email);
+  if (existing) throw new Error("Email already in use");
+
+  return insertUser(parsed);
+}
+```
+
+---
+
+## Testing
+
+### Philosophy
+
+- Every `*.queries.ts`, `*.mutations.ts`, and `*.service.ts` file should have a corresponding test file in `__tests__/`
+- Tests are written to be deterministic and fast — mock the DB in unit tests
+- Integration tests (hitting a real test DB) go in a separate `*.integration.test.ts` file
+
+### Test file naming convention
+
+```
+__tests__/
+├── users.queries.test.ts       # Unit tests — mock db
+├── users.mutations.test.ts     # Unit tests — mock db
+├── users.service.test.ts       # Unit tests — mock queries/mutations
+└── users.service.integration.test.ts  # Optional: real DB calls
+```
+
+### What to test
+
+- **Queries/Mutations:** Test the shape of returned data and that the correct Drizzle methods are called with the right arguments
+- **Services:** Test business logic branches (happy path, validation failure, conflict cases)
+- **Hooks:** Test using React Testing Library if they have meaningful logic
+- **Components:** Test critical user interactions, not implementation details
+
+---
+
+## Code Quality Rules
+
+These apply everywhere, always:
+
+1. **No `any`** — use `unknown` and narrow it, or define a proper type
+2. **No implicit returns** — always be explicit about what a function returns
+3. **Explicit error handling** — don't silently swallow errors; log or rethrow with context
+4. **Prefer `const`** over `let`; never use `var`
+5. **Pure functions where possible** — easier to test, easier to reason about
+6. **Early returns** to reduce nesting (avoid deep if/else chains)
+7. **Named exports only** — avoid default exports (they hurt refactoring and autocomplete)
+8. **One concern per file** — if a file is doing two things, split it
+
+---
+
+## Adding a New Feature (Checklist)
+
+When adding a new feature, create the following files (skip any that aren't needed yet, but don't skip tests):
+
+- [ ] `src/features/[name]/[name].schema.ts`
+- [ ] `src/features/[name]/[name].queries.ts`
+- [ ] `src/features/[name]/[name].mutations.ts`
+- [ ] `src/features/[name]/[name].service.ts`
+- [ ] `src/features/[name]/[name].hooks.ts` *(if client-side state needed)*
+- [ ] `src/features/[name]/components/` *(if UI needed)*
+- [ ] `src/features/[name]/__tests__/[name].queries.test.ts`
+- [ ] `src/features/[name]/__tests__/[name].mutations.test.ts`
+- [ ] `src/features/[name]/__tests__/[name].service.test.ts`
+- [ ] `src/features/[name]/index.ts` *(public API — export last, after everything else works)*
+
+If you're adding a DB table for this feature, also add:
+- [ ] `src/db/schemas/[name].ts`
+- [ ] Export it from `src/db/schemas/index.ts`
+- [ ] Generate and run the migration
+
+---
+
+## Adding a New DB Schema
+
+1. Create `src/db/schemas/[entity].ts`
+2. Define the table using Drizzle's schema builder
+3. Export it from `src/db/schemas/index.ts`
+4. Run `drizzle-kit generate` to create the migration
+5. Run `drizzle-kit migrate` to apply it
+
+---
+
+## What Agents Should NOT Do
+
+- Do not write business logic in route files — routes call services, nothing more
+- Do not import across features except through `index.ts`
+- Do not put raw SQL or Drizzle calls in service files
+- Do not create global state unless absolutely necessary — keep state local to features
+- Do not skip writing tests when adding queries, mutations, or service logic
+- Do not leave `TODO` comments without a note on what's blocking them
