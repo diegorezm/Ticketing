@@ -9,20 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PublicRouteImport } from './routes/_public'
 import { Route as PrivateRouteImport } from './routes/_private'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as PublicRegisterRouteImport } from './routes/_public/register'
 import { Route as PublicLoginRouteImport } from './routes/_public/login'
+import { Route as PrivateOnboardingRouteImport } from './routes/_private/onboarding'
 import { Route as PrivateDashboardRouteImport } from './routes/_private/dashboard'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
   getParentRoute: () => rootRouteImport,
@@ -46,6 +41,11 @@ const PublicLoginRoute = PublicLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => PublicRoute,
 } as any)
+const PrivateOnboardingRoute = PrivateOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => PrivateRoute,
+} as any)
 const PrivateDashboardRoute = PrivateDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -59,16 +59,16 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
-  '/onboarding': typeof OnboardingRoute
   '/dashboard': typeof PrivateDashboardRoute
+  '/onboarding': typeof PrivateOnboardingRoute
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
-  '/onboarding': typeof OnboardingRoute
   '/dashboard': typeof PrivateDashboardRoute
+  '/onboarding': typeof PrivateOnboardingRoute
   '/login': typeof PublicLoginRoute
   '/register': typeof PublicRegisterRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -77,8 +77,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_private': typeof PrivateRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
-  '/onboarding': typeof OnboardingRoute
   '/_private/dashboard': typeof PrivateDashboardRoute
+  '/_private/onboarding': typeof PrivateOnboardingRoute
   '/_public/login': typeof PublicLoginRoute
   '/_public/register': typeof PublicRegisterRoute
   '/_public/': typeof PublicIndexRoute
@@ -88,16 +88,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/onboarding'
     | '/dashboard'
+    | '/onboarding'
     | '/login'
     | '/register'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/onboarding'
     | '/dashboard'
+    | '/onboarding'
     | '/login'
     | '/register'
     | '/api/auth/$'
@@ -105,8 +105,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_private'
     | '/_public'
-    | '/onboarding'
     | '/_private/dashboard'
+    | '/_private/onboarding'
     | '/_public/login'
     | '/_public/register'
     | '/_public/'
@@ -116,19 +116,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   PrivateRoute: typeof PrivateRouteWithChildren
   PublicRoute: typeof PublicRouteWithChildren
-  OnboardingRoute: typeof OnboardingRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_public': {
       id: '/_public'
       path: ''
@@ -164,6 +156,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicLoginRouteImport
       parentRoute: typeof PublicRoute
     }
+    '/_private/onboarding': {
+      id: '/_private/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof PrivateOnboardingRouteImport
+      parentRoute: typeof PrivateRoute
+    }
     '/_private/dashboard': {
       id: '/_private/dashboard'
       path: '/dashboard'
@@ -183,10 +182,12 @@ declare module '@tanstack/react-router' {
 
 interface PrivateRouteChildren {
   PrivateDashboardRoute: typeof PrivateDashboardRoute
+  PrivateOnboardingRoute: typeof PrivateOnboardingRoute
 }
 
 const PrivateRouteChildren: PrivateRouteChildren = {
   PrivateDashboardRoute: PrivateDashboardRoute,
+  PrivateOnboardingRoute: PrivateOnboardingRoute,
 }
 
 const PrivateRouteWithChildren =
@@ -210,7 +211,6 @@ const PublicRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   PrivateRoute: PrivateRouteWithChildren,
   PublicRoute: PublicRouteWithChildren,
-  OnboardingRoute: OnboardingRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,18 +1,51 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "name": "ticketing",
   "compatibility_date": "2025-09-02",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "main": "@tanstack/react-start/server-entry",
   "vars": {
-    "$CLOUDFLARE_DATABASE_ID": null,
+    "ENVIRONMENT": "development",
+    "CLOUDFLARE_DATABASE_ID": "db-id"
   },
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "ticketing-dev-db",
-      "database_id": "$CLOUDFLARE_DATABASE_ID",
-      "migrations_dir": "./drizzle/",
-    },
+      "database_id": "your-dev-database-id",
+      "migrations_dir": "./drizzle/"
+    }
   ],
+  "env": {
+    "test": {
+      "name": "ticketing-test",
+      "vars": {
+        "ENVIRONMENT": "test"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ticketing-test-db",
+          "database_id": "your-test-database-id",
+          "migrations_dir": "./drizzle/"
+        }
+      ]
+    },
+    "production": {
+      "name": "ticketing-production",
+      "vars": {
+        "ENVIRONMENT": "production"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "ticketing-prod-db",
+          "database_id": "your-prod-database-id",
+          "migrations_dir": "./drizzle/"
+        }
+      ]
+    }
+  }
 }
