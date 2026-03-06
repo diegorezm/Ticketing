@@ -1,8 +1,4 @@
 import { Button } from '#/components/ui/button'
-import { Input } from '#/components/ui/input'
-import { Label } from '#/components/ui/label'
-import { Separator } from '#/components/ui/separator'
-import { Chrome, Github } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -10,11 +6,48 @@ import {
   CardHeader,
   CardTitle,
 } from '#/components/ui/card'
-import { Link } from '@tanstack/react-router'
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from '#/components/ui/field'
+import { Input } from '#/components/ui/input'
+import { Separator } from '#/components/ui/separator'
+import { registerSchema } from '#/features/auth/schemas/auth-schemas'
+import { useForm } from '@tanstack/react-form-start'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { WithSocialsSignup } from '../components/with-socials-signup'
+import { authClient } from '../../lib/auth-client'
+import { toast } from 'sonner'
 
 export function RegisterPage() {
+  const navigate = useNavigate()
+  const form = useForm({
+    defaultValues: { name: '', email: '', password: '' },
+    validators: {
+      onSubmit: registerSchema,
+    },
+    onSubmit: async ({ value }) => {
+      const { data, error } = await authClient.signUp.email({
+        ...value,
+      })
+
+      if (error) {
+        toast.error(error.message ?? 'Something went wrong!')
+        return
+      }
+
+      toast.success(`Hello ${data.user.name}! Welcome!`)
+
+      navigate({
+        to: '/dashboard',
+      })
+    },
+  })
+
   return (
-    <div className="min-h-screen bg-background flex justify-center px-4 py-18">
+    <div className="bg-background flex justify-center px-4 py-18">
       <div className="w-full max-w-md">
         <Card>
           <CardHeader>
@@ -22,17 +55,7 @@ export function RegisterPage() {
             <CardDescription>Get started with Ticketing today.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Button variant="outline" className="w-full gap-2" type="button">
-                <Github size={16} />
-                Continue with GitHub
-              </Button>
-              <Button variant="outline" className="w-full gap-2" type="button">
-                <Chrome size={16} />
-                Continue with Google
-              </Button>
-            </div>
-
+            <WithSocialsSignup />
             <div className="flex items-center gap-3">
               <Separator className="flex-1" />
               <span className="text-xs text-muted-foreground font-mono">
@@ -41,28 +64,96 @@ export function RegisterPage() {
               <Separator className="flex-1" />
             </div>
 
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" type="text" placeholder="John Doe" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" placeholder="you@example.com" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" type="password" placeholder="••••••••" />
-              </div>
-              <Button className="w-full">Create account</Button>
-            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                form.handleSubmit()
+              }}
+            >
+              <FieldGroup>
+                <form.Field name="name">
+                  {(field) => (
+                    <Field>
+                      <FieldLabel htmlFor={field.name}>Name</FieldLabel>
+                      <Input
+                        id={field.name}
+                        type="text"
+                        placeholder="John Doe"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                      />
+                      {field.state.meta.errors.length > 0 && (
+                        <FieldDescription className="text-destructive">
+                          {field.state.meta.errors[0]?.message}
+                        </FieldDescription>
+                      )}
+                    </Field>
+                  )}
+                </form.Field>
 
-            <p className="text-sm text-muted-foreground text-center">
+                <form.Field name="email">
+                  {(field) => (
+                    <Field>
+                      <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                      <Input
+                        id={field.name}
+                        type="email"
+                        placeholder="you@example.com"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                      />
+                      {field.state.meta.errors.length > 0 && (
+                        <FieldDescription className="text-destructive">
+                          {field.state.meta.errors[0]?.message}
+                        </FieldDescription>
+                      )}
+                    </Field>
+                  )}
+                </form.Field>
+
+                <form.Field
+                  name="password"
+                  validators={{ onBlur: registerSchema.shape.password }}
+                >
+                  {(field) => (
+                    <Field>
+                      <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                      <Input
+                        id={field.name}
+                        type="password"
+                        placeholder="••••••••"
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                      />
+                      {field.state.meta.errors.length > 0 && (
+                        <FieldDescription className="text-destructive">
+                          {field.state.meta.errors[0]?.message}
+                        </FieldDescription>
+                      )}
+                    </Field>
+                  )}
+                </form.Field>
+
+                <form.Subscribe selector={(s) => s.canSubmit}>
+                  {(canSubmit) => (
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={!canSubmit}
+                    >
+                      Create account
+                    </Button>
+                  )}
+                </form.Subscribe>
+              </FieldGroup>
+            </form>
+
+            <p className="text-sm text-muted-foreground text-center flex gap-2">
               Already have an account?{' '}
-              <Link
-                to="/login"
-                className="text-primary hover:underline underline-offset-4"
-              >
+              <Link to="/login" className="hover:underline underline-offset-4">
                 Sign in
               </Link>
             </p>
