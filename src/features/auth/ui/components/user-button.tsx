@@ -9,7 +9,13 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { Link } from '@tanstack/react-router'
-import { ChevronsUpDown, LogOut, Settings, User } from 'lucide-react'
+import {
+  ChevronsUpDown,
+  LayoutDashboardIcon,
+  LogOut,
+  Settings,
+  User,
+} from 'lucide-react'
 import { Button } from '#/components/ui/button'
 
 export function UserButton() {
@@ -34,9 +40,9 @@ export function UserButton() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="w-full outline-none" asChild>
-        <Button variant={'secondary'} className="p-6">
+        <Button variant={'ghost'} className="p-6">
           <Avatar className="h-7 w-7 rounded-md shrink-0">
-            <AvatarImage src={image ?? undefined} alt={name ?? ''} />
+            <AvatarImage src={image ?? undefined} alt={name} />
             <AvatarFallback className="rounded-md text-xs bg-primary text-primary-foreground">
               {initials}
             </AvatarFallback>
@@ -64,6 +70,12 @@ export function UserButton() {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="gap-2">
+          <Link to="/dashboard">
+            <LayoutDashboardIcon size={14} />
+            Dashboard
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild className="gap-2">
           <Link to="/">
             <User size={14} />
